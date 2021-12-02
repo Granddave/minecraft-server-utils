@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 
-set -x
-
 function log()
 {
-	echo "[$(date --iso-8601=ns)] $*" | tee -a /tmp/mc-util.log
+	echo "[$(date --iso-8601=ns)] $*" | tee -a /tmp/mc-util_$CONTAINER_NAME.log
 }
 
 function send_command()
@@ -30,29 +28,40 @@ function archive_backup()
 	BACKUP_DIR="$SERVER_DIR/backups"
 	mkdir -p $BACKUP_DIR
 	ROTATE_THRESHOLD=6000000
-	log "Num backups: $(backup_count) ($(total_backup_size)B)"
+	log "Num backups: $(backup_count) ($(total_backup_size | numfmt --to=iec-i))" # TODO: Multiply
 	while [ $(backup_count) -gt 1 ] && [ $(total_backup_size) -gt $ROTATE_THRESHOLD ]; do
 		OLDEST_BACKUP=$(find $BACKUP_DIR -type f -printf '%T+ %p\n' | sort | head -n 1 | cut -d" " -f2)
 		if [ -f "$OLDEST_BACKUP" ]; then
 			log "Removing $OLDEST_BACKUP"
 			rm -v "$OLDEST_BACKUP"
 		fi
-		log "Num backups: $(backup_count) ($(total_backup_size)B)"
+		log "Num backups: $(backup_count) ($(total_backup_size | numfmt --to=iec-i))"
 	done
 	TMP_DIR=$(mktemp -d)
 	cp -r "$SERVER_DIR/world" "$TMP_DIR"
 	pushd "$TMP_DIR"
 	TIMESTAMP=$(date "+%F_%T" | tr ":" "_")
 	BACKUP_FILENAME="backup_$TIMESTAMP.tar.gz"
-	tar czvf "$BACKUP_DIR/$BACKUP_FILENAME" "$TMP_DIR"
+	tar czvf "$BACKUP_DIR/$BACKUP_FILENAME" world
 	popd
 	rm -rf $TMP_DIR
 	log "Done"
 }
 
+function has_players_online()
+{
+	if [ $(send_command "list" | grep "There are" | cut -d" " -f3) -gt 0 ]; then
+		return 0
+	fi
+	return 1
+}
+
 function do_backup()
 {
-	# TODO: Only backup if any players are online
+	if ! has_players_online; then
+		log "No player online, aborting."
+		exit 0
+	fi
 	send_command "say Starting backup in 5 sec..."
 	sleep 5
 	send_command "say Starting backup"
@@ -81,20 +90,23 @@ function is_server_running()
 	return $?
 }
 
-CONTAINER_NAME="${CONTAINER_NAME:-minecraft_vanilla_minecraft_1}"
-SERVER_DIR="${SERVER_DIR:-/data/compose/minecraft_vanilla/data}"
+[ -n $CONTAINER_NAME ] || (log "ENV CONTAINER_NAME not set"; exit 1)
+[ -n $SERVER_DIR ] || (log "ENV SERVER_DIR not set"; exit 1)
+
+log "$0 started with \"$*\""
+log "Container: $CONTAINER_NAME"
+log "Server: $SERVER_DIR"
 
 if [ ! -d "$SERVER_DIR/world" ]; then
-	log "Did not find 'world' dir in $SERVER_DIR"
+	log "Did not find 'world' dir in $SERVER_DIR. Is this really a Minecraft server directory?"
 	exit 1
 fi
 
 if ! is_server_running; then
-	log "No connection to server: $CONTAINER_NAME"
+	log "Failed to send RCON command to $CONTAINER_NAME. Is the server really running?"
 	exit 1
 fi
 
-log "$0 started with \"$*\""
 case $1 in
 	"backup")
 		do_backup
