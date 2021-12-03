@@ -117,8 +117,8 @@ log "$0 started with \"$*\""
 log "Container: $CONTAINER_NAME"
 log "Server: $SERVER_DIR"
 
-if [ ! -d "$SERVER_DIR/world" ]; then
-	log "Did not find 'world' dir in $SERVER_DIR. Is this really a Minecraft server directory?"
+if [ ! -f "$SERVER_DIR/world/level.dat" ]; then
+	log "Did not find a world in $SERVER_DIR. Is this really a Minecraft server directory?"
 	exit 1
 fi
 
