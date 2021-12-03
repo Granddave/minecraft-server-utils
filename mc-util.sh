@@ -14,7 +14,7 @@ function send_command()
 
 function total_backup_size()
 {
-	echo $(du -s $BACKUP_DIR | cut -f1)
+	echo $(du -sb $BACKUP_DIR | cut -f1)
 }
 
 function backup_count()
@@ -22,21 +22,14 @@ function backup_count()
 	echo $(find $BACKUP_DIR -type f | wc -l)
 }
 
-function archive_backup()
+function log_backup_status()
 {
-	log "Archiving..."
-	BACKUP_DIR="$SERVER_DIR/backups"
-	mkdir -p $BACKUP_DIR
-	ROTATE_THRESHOLD=6000000
-	log "Num backups: $(backup_count) ($(total_backup_size | numfmt --to=iec-i))" # TODO: Multiply
-	while [ $(backup_count) -gt 1 ] && [ $(total_backup_size) -gt $ROTATE_THRESHOLD ]; do
-		OLDEST_BACKUP=$(find $BACKUP_DIR -type f -printf '%T+ %p\n' | sort | head -n 1 | cut -d" " -f2)
-		if [ -f "$OLDEST_BACKUP" ]; then
-			log "Removing $OLDEST_BACKUP"
-			rm -v "$OLDEST_BACKUP"
-		fi
-		log "Num backups: $(backup_count) ($(total_backup_size | numfmt --to=iec-i))"
-	done
+	log "Num backups: $(backup_count) ($(total_backup_size | numfmt --to=iec))"
+}
+
+function create_backup()
+{
+	log "Creating backup..."
 	TMP_DIR=$(mktemp -d)
 	cp -r "$SERVER_DIR/world" "$TMP_DIR"
 	pushd "$TMP_DIR"
@@ -45,7 +38,22 @@ function archive_backup()
 	tar czvf "$BACKUP_DIR/$BACKUP_FILENAME" world
 	popd
 	rm -rf $TMP_DIR
-	log "Done"
+}
+
+function rotate_backups()
+{
+	log "Rotating backups..."
+	mkdir -p $BACKUP_DIR
+	log_backup_status
+	while [ $(backup_count) -gt 1 ] && [ $(total_backup_size) -gt $(numfmt --from=iec $ROTATE_THRESHOLD) ]; do
+		OLDEST_BACKUP=$(find $BACKUP_DIR -type f -printf '%T+ %p\n' | sort | head -n 1 | cut -d" " -f2)
+		if [ -f "$OLDEST_BACKUP" ]; then
+			log "Removing $OLDEST_BACKUP"
+			rm -v "$OLDEST_BACKUP"
+		fi
+		log_backup_status
+	done
+	return
 }
 
 function has_players_online()
@@ -62,15 +70,18 @@ function do_backup()
 		log "No player online, aborting."
 		exit 0
 	fi
+
 	send_command "say Starting backup in 5 sec..."
 	sleep 5
 	send_command "say Starting backup"
 	send_command "save-off"
 	send_command "save-all"
 	sleep 1
-	archive_backup
+	create_backup
+	rotate_backups
 	send_command "save-on"
 	send_command "say Backup complete"
+	log "Done"
 }
 
 function run_command_file()
@@ -90,8 +101,15 @@ function is_server_running()
 	return $?
 }
 
+# Required envs
 [ -n $CONTAINER_NAME ] || (log "ENV CONTAINER_NAME not set"; exit 1)
 [ -n $SERVER_DIR ] || (log "ENV SERVER_DIR not set"; exit 1)
+
+# Optional envs
+ROTATE_THRESHOLD=${ROTATE_THRESHOLD:-"6G"}
+
+# Constants
+BACKUP_DIR="$SERVER_DIR/backups"
 
 log "$0 started with \"$*\""
 log "Container: $CONTAINER_NAME"
