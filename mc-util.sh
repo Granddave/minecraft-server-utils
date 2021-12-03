@@ -66,7 +66,7 @@ function has_players_online()
 
 function do_backup()
 {
-	if ! has_players_online; then
+	if ! has_players_online && [ -z $FORCE_BACKUP ]; then
 		log "No player online, aborting."
 		exit 0
 	fi
@@ -107,6 +107,7 @@ function is_server_running()
 
 # Optional envs
 ROTATE_THRESHOLD=${ROTATE_THRESHOLD:-"6G"}
+FORCE_BACKUP=${FORCE_BACKUP:-}
 
 # Constants
 BACKUP_DIR="$SERVER_DIR/backups"
