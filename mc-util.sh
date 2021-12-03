@@ -77,10 +77,11 @@ function do_backup()
 	send_command "save-off"
 	send_command "save-all"
 	sleep 1
+	SECONDS=0
 	create_backup
 	rotate_backups
 	send_command "save-on"
-	send_command "say Backup complete"
+	send_command "say Backup complete, took $(($SECONDS)) seconds."
 	log "Done"
 }
 
