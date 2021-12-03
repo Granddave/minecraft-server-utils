@@ -22,6 +22,16 @@ function backup_count()
 	echo $(find $BACKUP_DIR -type f | wc -l)
 }
 
+function latest_backup_size()
+{
+	if [ $(find $BACKUP_DIR -type f | wc -l) -eq 0 ]; then
+		echo "(Found no backup)"
+	else
+		LATEST_BACKUP=$(find $BACKUP_DIR -type f -printf '%T+ %p\n' | sort | tail -n 1 | cut -d" " -f2)
+		echo $(du -sh $LATEST_BACKUP | cut -f1)
+	fi
+}
+
 function log_backup_status()
 {
 	log "Num backups: $(backup_count) ($(total_backup_size | numfmt --to=iec))"
@@ -81,7 +91,7 @@ function do_backup()
 	create_backup
 	rotate_backups
 	send_command "save-on"
-	send_command "say Backup complete, took $(($SECONDS)) seconds."
+	send_command "say Backup complete, took $(($SECONDS)) seconds. Size: $(latest_backup_size)"
 	log "Done"
 }
 
