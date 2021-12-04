@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# vi: tabstop=4 shiftwidth=4 expandtab
 
 function log()
 {
