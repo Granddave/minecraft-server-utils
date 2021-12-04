@@ -55,7 +55,7 @@ function rotate_backups()
 	log "Rotating backups..."
 	mkdir -p "$BACKUP_DIR"
 	log_backup_status
-	while [ "$(backup_count)" -gt 1 ] && [ "$(total_backup_size)" -gt "$(numfmt --from=iec "$ROTATE_THRESHOLD")" ]; do
+	while [ "$(backup_count)" -gt 1 ] && [ "$(total_backup_size)" -gt "$(numfmt --from=iec "$BACKUP_DIR_SIZE_MAX")" ]; do
 		OLDEST_BACKUP=$(find "$BACKUP_DIR" -type f -printf '%T+ %p\n' | sort | head -n 1 | cut -d" " -f2)
 		if [ -f "$OLDEST_BACKUP" ]; then
 			log "Removing $OLDEST_BACKUP"
@@ -117,7 +117,7 @@ function is_server_running()
 [ -n "$SERVER_DIR" ] || (log "ENV SERVER_DIR not set"; exit 1)
 
 # Optional envs
-ROTATE_THRESHOLD=${ROTATE_THRESHOLD:-"6G"}
+BACKUP_DIR_SIZE_MAX=${BACKUP_DIR_SIZE_MAX:-"6G"}
 FORCE_BACKUP=${FORCE_BACKUP:-}
 
 # Constants
