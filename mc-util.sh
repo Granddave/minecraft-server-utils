@@ -2,33 +2,33 @@
 
 function log()
 {
-	echo "[$(date --iso-8601=ns)] $*" | tee -a /tmp/mc-util_$CONTAINER_NAME.log
+	echo "[$(date --iso-8601=ns)] $*" | tee -a "/tmp/mc-util_$CONTAINER_NAME.log"
 }
 
 function send_command()
 {
 	COMMAND="$1"
 	log "Running command: $COMMAND"
-	docker exec $CONTAINER_NAME rcon-cli "$COMMAND"
+	docker exec "$CONTAINER_NAME" rcon-cli "$COMMAND"
 }
 
 function total_backup_size()
 {
-	echo $(du -sb $BACKUP_DIR | cut -f1)
+	du -sb "$BACKUP_DIR" | cut -f1
 }
 
 function backup_count()
 {
-	echo $(find $BACKUP_DIR -type f | wc -l)
+	find "$BACKUP_DIR" -type f | wc -l
 }
 
 function latest_backup_size()
 {
-	if [ $(find $BACKUP_DIR -type f | wc -l) -eq 0 ]; then
+	if [ "$(find "$BACKUP_DIR" -type f | wc -l)" -eq 0 ]; then
 		echo "(Found no backup)"
 	else
-		LATEST_BACKUP=$(find $BACKUP_DIR -type f -printf '%T+ %p\n' | sort | tail -n 1 | cut -d" " -f2)
-		echo $(du -sh $LATEST_BACKUP | cut -f1)
+		LATEST_BACKUP=$(find "$BACKUP_DIR" -type f -printf '%T+ %p\n' | sort | tail -n 1 | cut -d" " -f2)
+		du -sh "$LATEST_BACKUP" | cut -f1
 	fi
 }
 
@@ -42,21 +42,21 @@ function create_backup()
 	log "Creating backup..."
 	TMP_DIR=$(mktemp -d)
 	cp -r "$SERVER_DIR/world" "$TMP_DIR"
-	pushd "$TMP_DIR"
+    pushd "$TMP_DIR" || (log "Failed to cd to '$TMP_DIR'"; exit 1)
 	TIMESTAMP=$(date "+%F_%T" | tr ":" "_")
 	BACKUP_FILENAME="backup_$TIMESTAMP.tar.gz"
 	tar czvf "$BACKUP_DIR/$BACKUP_FILENAME" world
-	popd
-	rm -rf $TMP_DIR
+    popd || (log "Failed to popd"; exit 1)
+	rm -rf "$TMP_DIR"
 }
 
 function rotate_backups()
 {
 	log "Rotating backups..."
-	mkdir -p $BACKUP_DIR
+	mkdir -p "$BACKUP_DIR"
 	log_backup_status
-	while [ $(backup_count) -gt 1 ] && [ $(total_backup_size) -gt $(numfmt --from=iec $ROTATE_THRESHOLD) ]; do
-		OLDEST_BACKUP=$(find $BACKUP_DIR -type f -printf '%T+ %p\n' | sort | head -n 1 | cut -d" " -f2)
+	while [ "$(backup_count)" -gt 1 ] && [ "$(total_backup_size)" -gt "$(numfmt --from=iec "$ROTATE_THRESHOLD")" ]; do
+		OLDEST_BACKUP=$(find "$BACKUP_DIR" -type f -printf '%T+ %p\n' | sort | head -n 1 | cut -d" " -f2)
 		if [ -f "$OLDEST_BACKUP" ]; then
 			log "Removing $OLDEST_BACKUP"
 			rm -v "$OLDEST_BACKUP"
@@ -68,7 +68,7 @@ function rotate_backups()
 
 function has_players_online()
 {
-	if [ $(send_command "list" | grep "There are" | cut -d" " -f3) -gt 0 ]; then
+	if [ "$(send_command "list" | grep "There are" | cut -d" " -f3)" -gt 0 ]; then
 		return 0
 	fi
 	return 1
@@ -76,7 +76,7 @@ function has_players_online()
 
 function do_backup()
 {
-	if ! has_players_online && [ -z $FORCE_BACKUP ]; then
+	if ! has_players_online && [ -z "$FORCE_BACKUP" ]; then
 		log "No player online, aborting."
 		exit 0
 	fi
@@ -91,30 +91,30 @@ function do_backup()
 	create_backup
 	rotate_backups
 	send_command "save-on"
-	send_command "say Backup complete, took $(($SECONDS)) seconds. Size: $(latest_backup_size)"
+	send_command "say Backup complete, took $SECONDS seconds. Size: $(latest_backup_size)"
 	log "Done"
 }
 
 function run_command_file()
 {
 	FILEPATH="$1"
-	[ -f $FILEPATH ] || (log "$FILEPATH doesn't exist"; exit 1)
-	while read CMD; do
+	[ -f "$FILEPATH" ] || (log "$FILEPATH doesn't exist"; exit 1)
+	while read -r CMD; do
 		if [ -n "$CMD" ]; then
 			send_command "$CMD"
 		fi
-	done < $FILEPATH
+	done < "$FILEPATH"
 }
 
 function is_server_running()
 {
-	send_command "list" 2>&1 > /dev/null
+	send_command "list" > /dev/null 2>&1
 	return $?
 }
 
 # Required envs
-[ -n $CONTAINER_NAME ] || (log "ENV CONTAINER_NAME not set"; exit 1)
-[ -n $SERVER_DIR ] || (log "ENV SERVER_DIR not set"; exit 1)
+[ -n "$CONTAINER_NAME" ] || (log "ENV CONTAINER_NAME not set"; exit 1)
+[ -n "$SERVER_DIR" ] || (log "ENV SERVER_DIR not set"; exit 1)
 
 # Optional envs
 ROTATE_THRESHOLD=${ROTATE_THRESHOLD:-"6G"}
