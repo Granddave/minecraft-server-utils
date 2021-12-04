@@ -1,5 +1,7 @@
 # Minecraft Server Utils
 
+[![Linting](https://github.com/Granddave/minecraft-server-utils/actions/workflows/ci.yml/badge.svg)](https://github.com/Granddave/minecraft-server-utils/actions/workflows/ci.yml)
+
 Utility script for backing up the server and running RCON commands.
 
 ## Assumed setup
