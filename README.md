@@ -63,3 +63,7 @@ playersSleepingPercentage 25
 
 See all wiki for [available commands](https://minecraft.fandom.com/wiki/Commands) and
 [gamerules](https://minecraft.fandom.com/wiki/Game_rule).
+
+## License
+
+This software is available as open source under the terms of the MIT License.
