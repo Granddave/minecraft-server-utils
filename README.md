@@ -61,7 +61,7 @@ spawnRadius 0
 playersSleepingPercentage 25
 ```
 
-See all wiki for [available commands](https://minecraft.fandom.com/wiki/Commands) and
+See wiki for [available commands](https://minecraft.fandom.com/wiki/Commands) and
 [gamerules](https://minecraft.fandom.com/wiki/Game_rule).
 
 ## License
