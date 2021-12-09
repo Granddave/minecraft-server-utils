@@ -92,7 +92,7 @@ function do_backup()
     create_backup
     rotate_backups
     send_command "save-on"
-    send_command "say Backup complete, took $SECONDS seconds. Size: $(latest_backup_size)"
+    send_command "say Backup complete, took $SECONDS seconds ($(latest_backup_size)). A total of $(backup_count) backups ($(total_backup_size | numfmt --to=iec))"
     log "Done"
 }
 
