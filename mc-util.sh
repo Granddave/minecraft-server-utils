@@ -20,7 +20,7 @@ function total_backup_size()
 
 function backup_count()
 {
-    find "$BACKUP_DIR" -type f | wc -l
+    find "$BACKUP_DIR" -maxdepth 1 -type f | wc -l
 }
 
 function latest_backup_size()
