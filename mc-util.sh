@@ -113,9 +113,18 @@ function is_server_running()
     return $?
 }
 
+function require_variable()
+{
+    VARIABLE_NAME="$1"
+    if [ -z "${!VARIABLE_NAME}" ]; then
+        log "Environment variable $VARIABLE_NAME not set"
+        exit 1
+    fi
+}
+
 # Required envs
-[ -n "$CONTAINER_NAME" ] || (log "ENV CONTAINER_NAME not set"; exit 1)
-[ -n "$SERVER_DIR" ] || (log "ENV SERVER_DIR not set"; exit 1)
+require_variable "CONTAINER_NAME"
+require_variable "SERVER_DIR"
 
 # Optional envs
 BACKUP_DIR_SIZE_MAX=${BACKUP_DIR_SIZE_MAX:-"6G"}
