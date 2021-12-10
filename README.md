@@ -2,7 +2,14 @@
 
 [![Linting](https://github.com/Granddave/minecraft-server-utils/actions/workflows/ci.yml/badge.svg)](https://github.com/Granddave/minecraft-server-utils/actions/workflows/ci.yml)
 
-Utility script for backing up the server and running RCON commands.
+Minecraft server utility for world backup and RCON command execution.
+
+## Functionality
+
+- World backup
+- RCON
+  - Ad hoc command
+  - Command file
 
 ## Assumed setup
 
@@ -11,13 +18,7 @@ This utility script...
 - is written for and tested with the [itzg/minecraft-server](https://hub.docker.com/r/itzg/minecraft-server)
   docker image (vanilla server). It may work for other setups as well.
 - assumes that the data directory is bind mounted (i.e. not in a volume).
-
-## Functionality
-
-- World backup
-- RCON
-  - Ad hoc command
-  - Command file
+- assumes that the RCON server is enabled and reachable via `docker exec $CONTAINER rcon-cli`
 
 ## Usage
 
