@@ -146,10 +146,6 @@ FORCE_BACKUP=${FORCE_BACKUP:-}
 # Constants
 BACKUP_DIR="$SERVER_DIR/backups"
 
-log "$0 started with \"$*\""
-log "Container: $CONTAINER_NAME"
-log "Server: $SERVER_DIR"
-
 if [ ! -f "$SERVER_DIR/world/level.dat" ]; then
     log "Did not find a world in $SERVER_DIR. Is this really a Minecraft server directory?"
     exit 1
