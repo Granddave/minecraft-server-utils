@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 # vi: tabstop=4 shiftwidth=4 expandtab
 
-function log()
+log()
 {
     echo "[$(date --iso-8601=ns)] $*" | tee -a "/tmp/mc-util_$CONTAINER_NAME.log"
 }
 
-function send_command()
+send_command()
 {
     local command="$1"
     log "Running command: $command"
     docker exec "$CONTAINER_NAME" rcon-cli "$command"
 }
 
-function total_backup_size()
+total_backup_size()
 {
     du -sb "$BACKUP_DIR" | cut -f1
 }
 
-function backup_count()
+backup_count()
 {
     find "$BACKUP_DIR" -maxdepth 1 -type f | wc -l
 }
 
-function latest_backup_size()
+latest_backup_size()
 {
     if [ "$(find "$BACKUP_DIR" -type f | wc -l)" -eq 0 ]; then
         echo "(Found no backup)"
@@ -34,12 +34,12 @@ function latest_backup_size()
     fi
 }
 
-function log_backup_status()
+log_backup_status()
 {
     log "Num backups: $(backup_count) ($(total_backup_size | numfmt --to=iec))"
 }
 
-function create_backup()
+create_backup()
 {
     log "Creating backup..."
     local tmp_dir
@@ -54,7 +54,7 @@ function create_backup()
     rm -rf "$tmp_dir"
 }
 
-function rotate_backups()
+rotate_backups()
 {
     log "Rotating backups..."
     mkdir -p "$BACKUP_DIR"
@@ -71,7 +71,7 @@ function rotate_backups()
     return
 }
 
-function has_players_online()
+has_players_online()
 {
     if [ "$(send_command "list" | grep "There are" | cut -d" " -f3)" -gt 0 ]; then
         return 0
@@ -79,7 +79,7 @@ function has_players_online()
     return 1
 }
 
-function do_backup()
+do_backup()
 {
     if ! has_players_online && [ -z "$FORCE_BACKUP" ]; then
         log "No player online, aborting."
@@ -100,7 +100,7 @@ function do_backup()
     log "Done"
 }
 
-function run_command_file()
+run_command_file()
 {
     local filepath="$1"
     if [ ! -f "$filepath" ]; then
@@ -114,13 +114,13 @@ function run_command_file()
     done < "$filepath"
 }
 
-function is_server_running()
+is_server_running()
 {
     send_command "list" > /dev/null 2>&1
     return $?
 }
 
-function require_variable()
+require_variable()
 {
     local variable_name="$1"
     if [ -z "${!variable_name}" ]; then
