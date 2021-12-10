@@ -99,7 +99,10 @@ function do_backup()
 function run_command_file()
 {
     FILEPATH="$1"
-    [ -f "$FILEPATH" ] || (log "$FILEPATH doesn't exist"; exit 1)
+    if [ ! -f "$FILEPATH" ]; then
+        log "$FILEPATH doesn't exist"
+        exit 1
+    fi
     while read -r CMD; do
         if [ -n "$CMD" ]; then
             send_command "$CMD"
