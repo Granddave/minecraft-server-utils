@@ -45,12 +45,18 @@ create_backup()
     local tmp_dir
     tmp_dir=$(mktemp -d)
     cp -r "$SERVER_DIR/world" "$tmp_dir"
-    pushd "$tmp_dir" || (log "Failed to cd to '$tmp_dir'"; exit 1)
+    if ! pushd "$tmp_dir"; then
+        log "Failed to create temporary directory '$tmp_dir'"
+        exit 1
+    fi
     local timestamp
     timestamp=$(date "+%F_%T" | tr ":" "_")
     local backup_filename="backup_$timestamp.tar.gz"
     tar czvf "$BACKUP_DIR/$backup_filename" world
-    popd || (log "Failed to popd"; exit 1)
+    if ! popd; then
+        log "Failed to cd back"
+        exit 1
+    fi
     rm -rf "$tmp_dir"
 }
 
