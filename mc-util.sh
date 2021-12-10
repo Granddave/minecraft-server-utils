@@ -8,9 +8,9 @@ function log()
 
 function send_command()
 {
-    COMMAND="$1"
-    log "Running command: $COMMAND"
-    docker exec "$CONTAINER_NAME" rcon-cli "$COMMAND"
+    local command="$1"
+    log "Running command: $command"
+    docker exec "$CONTAINER_NAME" rcon-cli "$command"
 }
 
 function total_backup_size()
@@ -28,8 +28,9 @@ function latest_backup_size()
     if [ "$(find "$BACKUP_DIR" -type f | wc -l)" -eq 0 ]; then
         echo "(Found no backup)"
     else
-        LATEST_BACKUP=$(find "$BACKUP_DIR" -type f -printf '%T+ %p\n' | sort | tail -n 1 | cut -d" " -f2)
-        du -sh "$LATEST_BACKUP" | cut -f1
+        local latest_backup
+        latest_backup=$(find "$BACKUP_DIR" -type f -printf '%T+ %p\n' | sort | tail -n 1 | cut -d" " -f2)
+        du -sh "$latest_backup" | cut -f1
     fi
 }
 
@@ -41,14 +42,16 @@ function log_backup_status()
 function create_backup()
 {
     log "Creating backup..."
-    TMP_DIR=$(mktemp -d)
-    cp -r "$SERVER_DIR/world" "$TMP_DIR"
-    pushd "$TMP_DIR" || (log "Failed to cd to '$TMP_DIR'"; exit 1)
-    TIMESTAMP=$(date "+%F_%T" | tr ":" "_")
-    BACKUP_FILENAME="backup_$TIMESTAMP.tar.gz"
-    tar czvf "$BACKUP_DIR/$BACKUP_FILENAME" world
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    cp -r "$SERVER_DIR/world" "$tmp_dir"
+    pushd "$tmp_dir" || (log "Failed to cd to '$tmp_dir'"; exit 1)
+    local timestamp
+    timestamp=$(date "+%F_%T" | tr ":" "_")
+    local backup_filename="backup_$timestamp.tar.gz"
+    tar czvf "$BACKUP_DIR/$backup_filename" world
     popd || (log "Failed to popd"; exit 1)
-    rm -rf "$TMP_DIR"
+    rm -rf "$tmp_dir"
 }
 
 function rotate_backups()
@@ -57,10 +60,11 @@ function rotate_backups()
     mkdir -p "$BACKUP_DIR"
     log_backup_status
     while [ "$(backup_count)" -gt 1 ] && [ "$(total_backup_size)" -gt "$(numfmt --from=iec "$BACKUP_DIR_SIZE_MAX")" ]; do
-        OLDEST_BACKUP=$(find "$BACKUP_DIR" -type f -printf '%T+ %p\n' | sort | head -n 1 | cut -d" " -f2)
-        if [ -f "$OLDEST_BACKUP" ]; then
-            log "Removing $OLDEST_BACKUP"
-            rm -v "$OLDEST_BACKUP"
+        local oldest_backup
+        oldest_backup=$(find "$BACKUP_DIR" -type f -printf '%T+ %p\n' | sort | head -n 1 | cut -d" " -f2)
+        if [ -f "$oldest_backup" ]; then
+            log "Removing $oldest_backup"
+            rm -v "$oldest_backup"
         fi
         log_backup_status
     done
@@ -98,16 +102,16 @@ function do_backup()
 
 function run_command_file()
 {
-    FILEPATH="$1"
-    if [ ! -f "$FILEPATH" ]; then
-        log "$FILEPATH doesn't exist"
+    local filepath="$1"
+    if [ ! -f "$filepath" ]; then
+        log "$filepath doesn't exist"
         exit 1
     fi
-    while read -r CMD; do
-        if [ -n "$CMD" ]; then
-            send_command "$CMD"
+    while read -r cmd; do
+        if [ -n "$cmd" ]; then
+            send_command "$cmd"
         fi
-    done < "$FILEPATH"
+    done < "$filepath"
 }
 
 function is_server_running()
@@ -118,9 +122,9 @@ function is_server_running()
 
 function require_variable()
 {
-    VARIABLE_NAME="$1"
-    if [ -z "${!VARIABLE_NAME}" ]; then
-        log "Environment variable $VARIABLE_NAME not set"
+    local variable_name="$1"
+    if [ -z "${!variable_name}" ]; then
+        log "Environment variable $variable_name not set"
         exit 1
     fi
 }
