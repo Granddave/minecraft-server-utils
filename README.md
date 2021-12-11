@@ -6,7 +6,7 @@ Minecraft server utility for world backup and RCON command execution.
 
 ## Functionality
 
-- World backup
+- World backup with rotation
 - RCON
   - Ad hoc command
   - Command file
@@ -34,10 +34,11 @@ Output will be sent to STDOUT as well as `/tmp/mc-util_$CONTAINER_NAME.log`
 
 `./mc-util.sh backup`
 
-Creates a backup of the world, compresses it to `$SERVER_DIR/backups` and rotates the backups if
+Creates a backup of the world, compresses it to `$BACKUP_DIR` and rotates the backups if
 the total size exceeds the `$BACKUP_DIR_SIZE_MAX`.
 
 - **Optional environment variables**
+  - `BACKUP_DIR` - Backup location on disk. Default `/data/backups/$CONTAINER_NAME/worlds`
   - `BACKUP_DIR_SIZE_MAX` - Maximum size of backups to keep in `$SERVER_DIR/backups`, e.g. `5G` or
     `500M`. Default `6G`.
   - `FORCE_BACKUP` - If set, run backup even if no players are online, e.g. `1`. Default *unset*.

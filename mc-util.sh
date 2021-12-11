@@ -141,11 +141,9 @@ require_variable "CONTAINER_NAME"
 require_variable "SERVER_DIR"
 
 # Optional envs
+BACKUP_DIR=${BACKUP_DIR:-"/data/backups/$CONTAINER_NAME/worlds"}
 BACKUP_DIR_SIZE_MAX=${BACKUP_DIR_SIZE_MAX:-"6G"}
 FORCE_BACKUP=${FORCE_BACKUP:-}
-
-# Constants
-BACKUP_DIR=${BACKUP_DIR:-"/data/backups/$CONTAINER_NAME/worlds"}
 
 if [ ! -f "$SERVER_DIR/world/level.dat" ]; then
     log "Did not find a world in $SERVER_DIR. Is this really a Minecraft server directory?"
