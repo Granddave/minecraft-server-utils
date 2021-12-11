@@ -50,8 +50,7 @@ create_backup()
     local timestamp
     timestamp=$(date "+%F_%T" | tr ":" "_")
     local backup_filename="backup_$timestamp.tar.gz"
-    mkdir -p $BACKUP_DIR
-    if [ $? -ne 0 ]; then
+    if [ "$(mkdir -p "$BACKUP_DIR")" ]; then
         log "Failed to create $BACKUP_DIR"
         exit 1
     fi
