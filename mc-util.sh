@@ -25,9 +25,7 @@ backup_count()
 
 latest_backup_size()
 {
-    if [ "$(find "$BACKUP_DIR" -type f | wc -l)" -eq 0 ]; then
-        echo "(Found no backup)"
-    else
+    if [ "$(find "$BACKUP_DIR" -type f | wc -l)" -ne 0 ]; then
         local latest_backup
         latest_backup=$(find "$BACKUP_DIR" -type f -printf '%T+ %p\n' | sort | tail -n 1 | cut -d" " -f2)
         du -sh "$latest_backup" | cut -f1
@@ -52,6 +50,11 @@ create_backup()
     local timestamp
     timestamp=$(date "+%F_%T" | tr ":" "_")
     local backup_filename="backup_$timestamp.tar.gz"
+    mkdir -p $BACKUP_DIR
+    if [ $? -ne 0 ]; then
+        log "Failed to create $BACKUP_DIR"
+        exit 1
+    fi
     tar czvf "$BACKUP_DIR/$backup_filename" world
     if ! popd; then
         log "Failed to cd back"
@@ -63,7 +66,6 @@ create_backup()
 rotate_backups()
 {
     log "Rotating backups..."
-    mkdir -p "$BACKUP_DIR"
     log_backup_status
     while [ "$(backup_count)" -gt 1 ] && [ "$(total_backup_size)" -gt "$(numfmt --from=iec "$BACKUP_DIR_SIZE_MAX")" ]; do
         local oldest_backup
@@ -144,7 +146,7 @@ BACKUP_DIR_SIZE_MAX=${BACKUP_DIR_SIZE_MAX:-"6G"}
 FORCE_BACKUP=${FORCE_BACKUP:-}
 
 # Constants
-BACKUP_DIR="$SERVER_DIR/backups"
+BACKUP_DIR=${BACKUP_DIR:-"/data/backups/$CONTAINER_NAME/worlds"}
 
 if [ ! -f "$SERVER_DIR/world/level.dat" ]; then
     log "Did not find a world in $SERVER_DIR. Is this really a Minecraft server directory?"
